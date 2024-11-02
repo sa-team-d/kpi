@@ -1,11 +1,9 @@
 from model.model import Data
 
-def filterData(name, session):
-    return session.query(Data).filter(Data.name == name).all()
-
-def showDataById(id, session):
-    return session.query(Data).filter(Data.id == id).first()
-
-def updateDataById(id, session):
-    return session.query(Data).filter(Data.id == id).first()
+def filterData(name, kpi, start_date, end_date, session):
+    return session.query(Data).filter(
+        Data.name == name,
+        Data.kpi == kpi,
+        Data.time.between(start_date, end_date)
+    ).all()
     

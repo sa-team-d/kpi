@@ -1,4 +1,4 @@
 from . import repository
 
-def filterData(name, session):
-    return repository.filterData(name, session)
+def filterData(name, kpi, start_date, end_date, session):
+    return repository.filterData(name, kpi, start_date, end_date, session)
