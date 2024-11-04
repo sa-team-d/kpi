@@ -6,6 +6,13 @@ from sqlalchemy import Column, String, DateTime, Float, func
 
 
 Base = declarative_base()
+class KPI():
+
+    __tablename__ = 'kpi'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(250), nullable=False)
+    children = Column(String(250), nullable=False)
 
 class Data(Base):
 
@@ -24,4 +31,4 @@ class Data(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
    
     def __repr__(self):
-        return f"<Data(id='{self.id}', name='{self.name}', created_at='{self.created_at}')>"
+        return f"<Data(id='{self.id}', name='{self.name}', kpi={self.kpi}, sum={self.sum})>"
