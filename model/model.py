@@ -6,7 +6,7 @@ from sqlalchemy import Column, String, DateTime, Float, func
 
 
 Base = declarative_base()
-class KPI():
+class KPI(Base):
 
     __tablename__ = 'kpi'
 
