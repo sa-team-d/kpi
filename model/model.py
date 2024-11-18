@@ -1,34 +1,28 @@
-import uuid
+from typing import List
+from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional
 from datetime import datetime
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, DateTime, Float, func
 
+# class Machine(BaseModel):
+#     asset_id: str = Field(...)
+#     category: Optional[str]
+#     name: str = Field(...)
+#     kpi_list: List['KPI'] = Field(...) 
+class Value(BaseModel):
+    sum: Optional[float]
+    avg: Optional[float]
+    min: Optional[float]
+    max: Optional[float]
+    datetime: Optional[datetime]
+    machine_id: str
 
-Base = declarative_base()
-class KPI(Base):
+class Configuration(BaseModel):
+    children: List['KPI'] = Field(...)
+    formula: Optional[str]
 
-    __tablename__ = 'kpi'
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String(250), nullable=False)
-    children = Column(String(250), nullable=False)
-
-class Data(Base):
-
-    __tablename__ = 'data'
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    time = Column(DateTime)
-    asset_id = Column(String(250), nullable=False)
-    name = Column(String(250), nullable=False)
-    kpi = Column(String(250), nullable=False)
-    sum = Column(Float, nullable=False)
-    avg = Column(Float, nullable=False)
-    min = Column(Float, nullable=False)
-    max = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=func.now(), nullable=False)
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
-   
-    def __repr__(self):
-        return f"<Data(id='{self.id}', name='{self.name}', kpi={self.kpi}, sum={self.sum})>"
+class KPI(BaseModel):
+    name: str = Field(...)
+    type: Optional[str]
+    data: List['Value'] = Field(...)
+    config: Configuration = Field(...)
