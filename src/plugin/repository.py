@@ -1,14 +1,75 @@
 from ..config.db import kpis_collection
+from sympy import sympify
 from datetime import datetime
-'''
-agregations
-get istance kpi given class kpi
+from typing import List
+class MapOps:
+    avg = "$avg"
+    sum = "$sum"
+    min = "$min"
+    max = "$max"
 
-'''
-def retrieveKPI(name: str):
-    pass
+def filterKPI(
+    machine_id, 
+    kpi, 
+    start_date, 
+    end_date, 
+    granularity_days, 
+    granularity_operation
+):
+    kpi_obj = getKPIByName(kpi)
+    if 'data' not in kpi_obj:
+        children = kpi_obj['config']['children']
+        formula = kpi_obj['config']['formula']
+        values = []
+        for child in children:
+            kpi_dep = getKPIById(child)
+            value = filterKPI(
+                machine_id, 
+                kpi_dep['name'], 
+                start_date,
+                end_date,
+                granularity_days, 
+                granularity_operation
+            )
+            values.append({ kpi_dep['name']: value })
+        value = values[0]
+        key = next(iter(value.keys()))
+        results = []
+        for index in range(len(value[key])):
+            symbol_dict = { next(iter(v.keys())): v[next(iter(v.keys()))][index]['value'] for v in values}
+            parsed_expression = sympify(formula)
+            result = parsed_expression.subs(symbol_dict)
+            results.append({'value': result})
+        return results
+            
 
-def sumData(name, kpi, start_date, end_date):
+    else:
+        return retrieveAtomicKPI(
+            machine_id, 
+            kpi, 
+            start_date, 
+            end_date, 
+            granularity_days, 
+            granularity_operation
+        )
+
+
+def retrieveAtomicKPI(
+    machine_id, 
+    kpi, 
+    start_date, 
+    end_date, 
+    granularity_days, 
+    granularity_operation
+):
+    '''
+    machine_id: id of the machine
+    kpi: kpi name
+    start_date
+    end_date
+    granularity_days: number of days to subaggregate data
+    granularity_operation: sum, avg, min, max
+    '''
     pipeline = [
         {
             "$match": {
@@ -22,7 +83,7 @@ def sumData(name, kpi, start_date, end_date):
         },
         {
             "$match": {
-                "data.machine_id": name,
+                "data.machine_id": machine_id,
                 "data.datetime": {
                     "$gte": start_date,
                     "$lte": end_date
@@ -47,7 +108,7 @@ def sumData(name, kpi, start_date, end_date):
             "$addFields": {
                 "groupIndex": {
                     "$floor": {
-                        "$divide": ["$index", 2]
+                        "$divide": ["$index", granularity_days]
                     }
                 }
             }
@@ -56,7 +117,7 @@ def sumData(name, kpi, start_date, end_date):
             "$group": {
                 "_id": "$groupIndex",
                 "value": {
-                    "$avg": "$documents.data.avg"
+                    granularity_operation: "$documents.data.avg"
                 }
             }
         },
@@ -74,12 +135,24 @@ def sumData(name, kpi, start_date, end_date):
     ]
     return list(kpis_collection.aggregate(pipeline))
     
-def avgData(name, kpi, start_date, end_date):
-    pass
-    
-def minData(name, kpi, start_date, end_date):
-    pass
-    
-def maxData(name, kpi, start_date, end_date):
-    pass
-    
+def getKPIByName(name: str):
+    return kpis_collection.find_one({"name": name})
+
+def getKPIById(id: str):
+    return kpis_collection.find_one({"_id": id})
+
+def createKPI(
+    name: str,
+    children: List[str], 
+    formula: str
+):
+    return kpis_collection.insert_one(
+        {
+            "name": name,
+            "config": 
+            {
+                "children": children,
+                "formula": formula
+            }
+        }
+    )

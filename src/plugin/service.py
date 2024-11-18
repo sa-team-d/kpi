@@ -1,13 +1,34 @@
 from . import repository
+from .repository import MapOps
+from typing import List
 
-def avgData(name, kpi, start_date, end_date):
-    return repository.avgData(name, kpi, start_date, end_date)
+def getGranularityOperation(op):
+    if op == 'sum':
+        return MapOps.sum
+    if op == 'avg':
+        return MapOps.avg
+    if op == 'min':
+        return MapOps.min
+    if op == 'max':
+        return MapOps.max
+    
+def filterKPI(
+    name, 
+    kpi,
+    start_date,
+    end_date,
+    granularity_days,
+    granularity_op
+):
+    granularity_op = getGranularityOperation(granularity_op)
+    return repository.filterKPI(name, kpi, start_date, end_date, granularity_days, granularity_op)
 
-def minData(name, kpi, start_date, end_date):
-    return repository.minData(name, kpi, start_date, end_date)
+def getKPIByName(name: str):
+    return repository.getKPIByName(name)
 
-def maxData(name, kpi, start_date, end_date):
-    return repository.maxData(name, kpi, start_date, end_date)
-
-def sumData(name, kpi, start_date, end_date):
-    return repository.sumData(name, kpi, start_date, end_date)
+def createKPI(
+    name: str,
+    children: List[str], 
+    formula: str
+):
+    repository.createKPI(name, children, formula)
