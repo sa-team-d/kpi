@@ -16,33 +16,24 @@ def filterKPI(
     granularity_days, 
     granularity_operation
 ):
+    '''
+    machine_id: id of the machine
+    kpi: kpi name
+    start_date
+    end_date
+    granularity_days: number of days to subaggregate data
+    granularity_operation: sum, avg, min, max
+    '''
     kpi_obj = getKPIByName(kpi)
     if 'data' not in kpi_obj:
-        children = kpi_obj['config']['children']
-        formula = kpi_obj['config']['formula']
-        values = []
-        for child in children:
-            kpi_dep = getKPIById(child)
-            value = filterKPI(
-                machine_id, 
-                kpi_dep['name'], 
-                start_date,
-                end_date,
-                granularity_days, 
-                granularity_operation
-            )
-            values.append({ kpi_dep['name']: value })
-        value = values[0]
-        key = next(iter(value.keys()))
-        results = []
-        for index in range(len(value[key])):
-            symbol_dict = { next(iter(v.keys())): v[next(iter(v.keys()))][index]['value'] for v in values}
-            parsed_expression = sympify(formula)
-            result = parsed_expression.subs(symbol_dict)
-            results.append({'value': result})
-        return results
-            
-
+        return retrieveCompositeKPI(
+            machine_id, 
+            kpi, 
+            start_date, 
+            end_date, 
+            granularity_days, 
+            granularity_operation
+        )
     else:
         return retrieveAtomicKPI(
             machine_id, 
@@ -53,6 +44,38 @@ def filterKPI(
             granularity_operation
         )
 
+def retrieveCompositeKPI(
+    machine_id, 
+    kpi, 
+    start_date, 
+    end_date, 
+    granularity_days, 
+    granularity_operation
+):
+    kpi_obj = getKPIByName(kpi)
+    children = kpi_obj['config']['children']
+    formula = kpi_obj['config']['formula']
+    values = []
+    for child in children:
+        kpi_dep = getKPIById(child)
+        value = filterKPI(
+            machine_id, 
+            kpi_dep['name'], 
+            start_date,
+            end_date,
+            granularity_days, 
+            granularity_operation
+        )
+        values.append({ kpi_dep['name']: value })
+    value = values[0]
+    key = next(iter(value.keys()))
+    results = []
+    for index in range(len(value[key])):
+        symbol_dict = { next(iter(v.keys())): v[next(iter(v.keys()))][index]['value'] for v in values}
+        parsed_expression = sympify(formula)
+        result = parsed_expression.subs(symbol_dict)
+        results.append({'value': result})
+    return results
 
 def retrieveAtomicKPI(
     machine_id, 
@@ -62,14 +85,6 @@ def retrieveAtomicKPI(
     granularity_days, 
     granularity_operation
 ):
-    '''
-    machine_id: id of the machine
-    kpi: kpi name
-    start_date
-    end_date
-    granularity_days: number of days to subaggregate data
-    granularity_operation: sum, avg, min, max
-    '''
     pipeline = [
         {
             "$match": {
