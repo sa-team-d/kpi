@@ -13,7 +13,7 @@ def working_ratio_definer():
 
     name = 'working_ratio'
     formula = 'working_time/offline_time'
-    controller.createKPI(name, children, formula)
+    controller.createKPI(name, formula)
     
 def energy_efficiency_definer():
     
@@ -28,14 +28,14 @@ def energy_efficiency_definer():
 
     name = 'energy_efficiency'
     formula = 'consumption/cycles'
-    controller.createKPI(name, children, formula)
+    controller.createKPI(name, formula)
     
 def faulty_kpi_definer():
     
     children = []
     name = 'faulty_kpi'
     formula = 'bug/cycles'
-    controller.createKPI(name, children, formula)
+    controller.createKPI(name, formula)
     
 def filterKPI_example(kpi):
     name = 'ast-yhccl1zjue2t'
@@ -47,5 +47,5 @@ def filterKPI_example(kpi):
     print(res)
 
 if __name__ == '__main__':
-    # faulty_kpi_definer()
-    filterKPI_example('energy_efficiency')
+    faulty_kpi_definer()
+    #filterKPI_example('energy_efficiency')

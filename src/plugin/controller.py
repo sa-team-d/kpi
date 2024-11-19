@@ -27,10 +27,9 @@ def getKPIByName(
 
 def createKPI(
     name: str,
-    children: List[str], 
     formula: str
 ):
     try:
-        service.createKPI(name, children, formula)
+        service.createKPI(name, formula)
     except:
         print('error in creating kpi')
