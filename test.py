@@ -47,5 +47,5 @@ def filterKPI_example(kpi):
     print(res)
 
 if __name__ == '__main__':
-    faulty_kpi_definer()
-    #filterKPI_example('faulty_kpi')
+    # faulty_kpi_definer()
+    filterKPI_example('energy_efficiency')

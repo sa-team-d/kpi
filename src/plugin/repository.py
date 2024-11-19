@@ -2,11 +2,6 @@ from ..config.db import kpis_collection
 from sympy import sympify
 from datetime import datetime
 from typing import List
-class MapOps:
-    avg = "$avg"
-    sum = "$sum"
-    min = "$min"
-    max = "$max"
 
 def filterKPI(
     machine_id, 
@@ -14,7 +9,7 @@ def filterKPI(
     start_date, 
     end_date, 
     granularity_days, 
-    granularity_operation
+    granularity_op
 ):
     '''
     machine_id: id of the machine
@@ -32,7 +27,7 @@ def filterKPI(
             start_date, 
             end_date, 
             granularity_days, 
-            granularity_operation
+            granularity_op
         )
     else:
         return retrieveAtomicKPI(
@@ -41,7 +36,7 @@ def filterKPI(
             start_date, 
             end_date, 
             granularity_days, 
-            granularity_operation
+            granularity_op
         )
 
 def retrieveCompositeKPI(
@@ -50,7 +45,7 @@ def retrieveCompositeKPI(
     start_date, 
     end_date, 
     granularity_days, 
-    granularity_operation
+    granularity_op
 ):
     kpi_obj = getKPIByName(kpi)
     children = kpi_obj['config']['children']
@@ -64,7 +59,7 @@ def retrieveCompositeKPI(
             start_date,
             end_date,
             granularity_days, 
-            granularity_operation
+            granularity_op
         )
         values.append({ kpi_dep['name']: value })
     value = values[0]
@@ -83,7 +78,7 @@ def retrieveAtomicKPI(
     start_date, 
     end_date, 
     granularity_days, 
-    granularity_operation
+    granularity_op
 ):
     pipeline = [
         {
@@ -132,7 +127,7 @@ def retrieveAtomicKPI(
             "$group": {
                 "_id": "$groupIndex",
                 "value": {
-                    granularity_operation: "$documents.data.avg"
+                    f"${granularity_op}": f"$documents.data.{granularity_op}"
                 }
             }
         },

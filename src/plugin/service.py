@@ -1,18 +1,18 @@
 from . import repository
-from .repository import MapOps
 from typing import List
 from ..config.db import kpis_collection
 from sympy import sympify
 
-def getGranularityOperation(op):
+def checkValidOps(op):
     if op == 'sum':
-        return MapOps.sum
+        return True
     if op == 'avg':
-        return MapOps.avg
+        return True
     if op == 'min':
-        return MapOps.min
+        return True
     if op == 'max':
-        return MapOps.max
+        return True
+    return False
     
 def filterKPI(
     name, 
@@ -22,7 +22,8 @@ def filterKPI(
     granularity_days,
     granularity_op
 ):
-    granularity_op = getGranularityOperation(granularity_op)
+    if not checkValidOps(granularity_op):
+        raise Exception('Not valid op')
     return repository.filterKPI(name, kpi, start_date, end_date, granularity_days, granularity_op)
 
 def getKPIByName(name: str):
