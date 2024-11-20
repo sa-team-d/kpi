@@ -14,7 +14,7 @@ def checkValidOps(op):
         return True
     return False
     
-def filterKPI(
+def computeKPI(
     name, 
     kpi,
     start_date,
@@ -24,25 +24,27 @@ def filterKPI(
 ):
     if not checkValidOps(granularity_op):
         raise Exception('Not valid op')
-    return repository.filterKPI(name, kpi, start_date, end_date, granularity_days, granularity_op)
+    return repository.computeKPI(name, kpi, start_date, end_date, granularity_days, granularity_op)
 
 def getKPIByName(name: str):
     return repository.getKPIByName(name)
+
+def getKPIById(id: str):
+    return repository.getKPIById(id)
 
 def createKPI(
     name: str,
     formula: str
 ):
     expr = sympify(formula)
-    kpis_in_formula = {str(symbol) for symbol in expr.free_symbols}
-    
-    existing_kpis = kpis_collection.find({"name": {"$in": list(kpis_in_formula)}}, {"_id": 1, "name": 1})
+    kpis_in_formula = {str(symbol) for symbol in expr.free_symbols}   
+    existing_kpis = repository.listKPIsByName(list(kpis_in_formula))
 
     existing_kpi_names = set()
     children = []
     for doc in existing_kpis:
-        existing_kpi_names.add(doc["name"])
-        children.append(doc["_id"])
+        existing_kpi_names.add(doc.name)
+        children.append(doc.id)
 
     missing_kpis = kpis_in_formula - existing_kpi_names
     if missing_kpis:

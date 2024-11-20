@@ -1,16 +1,16 @@
 from ..config.db import kpis_collection
 from sympy import sympify
-from datetime import datetime
 from typing import List
+from ..model.model import KPI, Configuration, ComputedValue
 
-def filterKPI(
+def computeKPI(
     machine_id, 
     kpi, 
     start_date, 
     end_date, 
     granularity_days, 
     granularity_op
-):
+) -> List[ComputedValue]:
     '''
     machine_id: id of the machine
     kpi: kpi name
@@ -20,8 +20,8 @@ def filterKPI(
     granularity_operation: sum, avg, min, max
     '''
     kpi_obj = getKPIByName(kpi)
-    if 'data' not in kpi_obj:
-        return retrieveCompositeKPI(
+    if kpi_obj.data == None:
+        return computeCompositeKPI(
             machine_id, 
             kpi, 
             start_date, 
@@ -30,7 +30,7 @@ def filterKPI(
             granularity_op
         )
     else:
-        return retrieveAtomicKPI(
+        return computeAtomicKPI(
             machine_id, 
             kpi, 
             start_date, 
@@ -39,47 +39,50 @@ def filterKPI(
             granularity_op
         )
 
-def retrieveCompositeKPI(
+def computeCompositeKPI(
     machine_id, 
     kpi, 
     start_date, 
     end_date, 
     granularity_days, 
     granularity_op
-):
+) -> List[ComputedValue]:
     kpi_obj = getKPIByName(kpi)
-    children = kpi_obj['config']['children']
-    formula = kpi_obj['config']['formula']
+    children = kpi_obj.config.children
+    formula = kpi_obj.config.formula
     values = []
     for child in children:
         kpi_dep = getKPIById(child)
-        value = filterKPI(
+        value = computeKPI(
             machine_id, 
-            kpi_dep['name'], 
+            kpi_dep.name, 
             start_date,
             end_date,
             granularity_days, 
             granularity_op
         )
-        values.append({ kpi_dep['name']: value })
+        values.append({ kpi_dep.name: value })
     value = values[0]
     key = next(iter(value.keys()))
     results = []
     for index in range(len(value[key])):
-        symbol_dict = { next(iter(v.keys())): v[next(iter(v.keys()))][index]['value'] for v in values}
+        symbol_dict = {}
+        for v in values:
+            k = next(iter(v.keys()))
+            symbol_dict[k] = v[k][index].value
         parsed_expression = sympify(formula)
         result = parsed_expression.subs(symbol_dict)
-        results.append({'value': result})
+        results.append(ComputedValue(value=result))
     return results
 
-def retrieveAtomicKPI(
+def computeAtomicKPI(
     machine_id, 
     kpi, 
     start_date, 
     end_date, 
     granularity_days, 
     granularity_op
-):
+) -> List[ComputedValue]:
     pipeline = [
         {
             "$match": {
@@ -143,26 +146,41 @@ def retrieveAtomicKPI(
             }
         }
     ]
-    return list(kpis_collection.aggregate(pipeline))
+    return [ComputedValue(**kpi) for kpi in list(kpis_collection.aggregate(pipeline))]
     
-def getKPIByName(name: str):
-    return kpis_collection.find_one({"name": name})
+def getKPIByName(name: str) -> KPI:
+    kpi = kpis_collection.find_one({"name": name})
+    return KPI(**kpi)
 
-def getKPIById(id: str):
-    return kpis_collection.find_one({"_id": id})
+def getKPIById(id: str) -> KPI:
+    kpi = kpis_collection.find_one({"_id": id})
+    return KPI(**kpi)
+
+def listKPIsByNames(names: List[str]) -> List[KPI]:
+    kpis = kpis_collection.find({"name": {"$in": names}})
+    return [KPI(**kpi) for kpi in kpis]
+
+def listKPIsByIds(ids: List[str]) -> List[KPI]:
+    kpis = kpis_collection.find({"_id": {"$in": ids}})
+    return [KPI(**kpi) for kpi in kpis]
 
 def createKPI(
     name: str,
+    type: str,
+    description: str,
+    unite_of_measure: str,
     children: List[str], 
     formula: str
-):
-    return kpis_collection.insert_one(
-        {
-            "name": name,
-            "config": 
-            {
-                "children": children,
-                "formula": formula
-            }
-        }
+) -> KPI:
+    kpi = KPI(
+        name=name,
+        type=type,
+        description=description,
+        unite_of_measure=unite_of_measure,
+        config=Configuration(
+            children=children, 
+            formula=formula
+        )
     )
+    kpi = kpis_collection.insert_one(kpi.dict(by_alias=True))
+    return KPI(**kpi)

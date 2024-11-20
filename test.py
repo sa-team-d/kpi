@@ -17,14 +17,11 @@ def working_ratio_definer():
     
 def energy_efficiency_definer():
     
-    children = []
     kpi = 'consumption'
-    res = controller.getKPIByName(kpi)
-    children.append(res['_id'])
+    controller.getKPIByName(kpi)
 
     kpi = 'cycles'
-    res = controller.getKPIByName(kpi)
-    children.append(res['_id'])
+    controller.getKPIByName(kpi)
 
     name = 'energy_efficiency'
     formula = 'consumption/cycles'
@@ -32,7 +29,6 @@ def energy_efficiency_definer():
     
 def faulty_kpi_definer():
     
-    children = []
     name = 'faulty_kpi'
     formula = 'bug/cycles'
     controller.createKPI(name, formula)
@@ -47,5 +43,5 @@ def filterKPI_example(kpi):
     print(res)
 
 if __name__ == '__main__':
-    faulty_kpi_definer()
-    #filterKPI_example('energy_efficiency')
+    # faulty_kpi_definer()
+    filterKPI_example('energy_efficiency')
